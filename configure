@@ -2,14 +2,11 @@
 
 set -e
 set -o pipefail
-
 # Find out the absolute path to where ./configure resides
 pushd `dirname $0` > /dev/null
 SOURCE_BASE_DIR=`pwd -P`
 popd > /dev/null
-
 PLATFORM="$(uname -s | tr 'A-Z' 'a-z')"
-
 function is_linux() {
   if [[ "${PLATFORM}" == "linux" ]]; then
     true
@@ -17,7 +14,6 @@ function is_linux() {
     false
   fi
 }
-
 function is_macos() {
   if [[ "${PLATFORM}" == "darwin" ]]; then
     true
@@ -25,7 +21,6 @@ function is_macos() {
     false
   fi
 }
-
 function is_windows() {
   # On windows, the shell script is actually running in msys
   if [[ "${PLATFORM}" =~ msys_nt*|mingw*|cygwin*|uwin* ]]; then
@@ -34,7 +29,6 @@ function is_windows() {
     false
   fi
 }
-
 function sed_hyphen_i() {
   if is_macos; then
     sed -i '' "$@"
@@ -42,7 +36,6 @@ function sed_hyphen_i() {
     sed -i "$@"
   fi
 }
-
 function write_to_bazelrc() {
   echo "$1" >> .tf_configure.bazelrc
 }
@@ -50,21 +43,18 @@ function write_to_bazelrc() {
 function write_action_env_to_bazelrc() {
   write_to_bazelrc "build --action_env $1=\"$2\""
 }
-
 # This file contains customized config settings.
 rm -f .tf_configure.bazelrc
 touch .tf_configure.bazelrc
 touch .bazelrc
 sed_hyphen_i "/tf_configure/d" .bazelrc
 echo "import .tf_configure.bazelrc" >> .bazelrc
-
 # Delete any leftover BUILD files from the Makefile build, which would interfere
 # with Bazel parsing.
 MAKEFILE_DOWNLOAD_DIR=tensorflow/contrib/makefile/downloads
 if [ -d "${MAKEFILE_DOWNLOAD_DIR}" ]; then
   find ${MAKEFILE_DOWNLOAD_DIR} -type f -name '*BUILD' -delete
 fi
-
 ## Set up python-related environment settings
 while true; do
   fromuser=""
@@ -86,7 +76,6 @@ while true; do
   PYTHON_BIN_PATH=""
   # Retry
 done
-
 ## Set up MKL related environment settings
 if false; then # Disable building with MKL for now
   while [ "$TF_NEED_MKL" == "" ]; do
@@ -100,9 +89,7 @@ if false; then # Disable building with MKL for now
       * ) echo "Invalid selection: " $INPUT;;
     esac
   done
-
   OSNAME=`uname -s`
-
   if [ "$TF_NEED_MKL" == "1" ]; then # TF_NEED_MKL
     DST=`dirname $0`
     ARCHIVE_BASENAME=mklml_lnx_2017.0.2.20170209.tgz
@@ -115,12 +102,10 @@ if false; then # Disable building with MKL for now
     extracted_dir_name="${ARCHIVE_BASENAME%.*}"
     MKL_INSTALL_PATH=$DST/third_party/mkl/$extracted_dir_name
     MKL_INSTALL_PATH=`${PYTHON_BIN_PATH} -c "import os; print(os.path.realpath(os.path.expanduser('${MKL_INSTALL_PATH}')))"`
-
     if [ "$OSNAME" == "Linux" ]; then
       # Full MKL configuration
       MKL_RT_LIB_PATH="lib/intel64/libmkl_rt.so" #${TF_MKL_EXT}#TODO version?
       MKL_RT_OMP_LIB_PATH="../compiler/lib/intel64/libiomp5.so" #TODO VERSION?
-
       # MKL-ML configuration
       MKL_ML_LIB_PATH="lib/libmklml_intel.so" #${TF_MKL_EXT}#TODO version?
       MKL_ML_OMP_LIB_PATH="lib/libiomp5.so" #TODO VERSION?
@@ -128,7 +113,6 @@ if false; then # Disable building with MKL for now
       echo "Darwin is unsupported yet";
       exit 1
     fi
-
     if [ -e "$MKL_INSTALL_PATH/${MKL_ML_LIB_PATH}" ]; then
       ln -sf $MKL_INSTALL_PATH/${MKL_ML_LIB_PATH} third_party/mkl/
       ln -sf $MKL_INSTALL_PATH/${MKL_ML_OMP_LIB_PATH} third_party/mkl/
@@ -138,7 +122,6 @@ if false; then # Disable building with MKL for now
       echo "ERROR: $MKL_INSTALL_PATH/${MKL_ML_LIB_PATH} does not exist";
       exit 1
     fi
-
     if [ -z "$fromuser" ]; then
       exit 1
     fi
@@ -152,7 +135,6 @@ EOF
   fi # TF_NEED_MKL
   ################## MKL
 fi # Disable building with MKL for now
-
 ## Set up architecture-dependent optimization flags.
 if [ -z "$CC_OPT_FLAGS" ]; then
   default_cc_opt_flags="-march=native"
